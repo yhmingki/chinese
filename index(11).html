@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>拼音动物乐园 · 养宠学拼音</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e5f7e1 0%, #c8e7b5 100%);
+            min-height: 100vh;
+            padding: 20px;
+            font-family: 'Comic Neue', 'Comic Sans MS', 'Chalkboard SE', 'Poppins', cursive, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* 可爱漂浮装饰 */
+        body::before {
+            content: "🐣🐝🦋";
+            font-size: 90px;
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            opacity: 0.2;
+            pointer-events: none;
+            white-space: pre;
+            transform: rotate(-8deg);
+        }
+
+        body::after {
+            content: "🍎🍬⭐";
+            font-size: 85px;
+            bottom: 15px;
+            right: 20px;
+            position: absolute;
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        /* 主游戏面板 */
+        .game-container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 254, 235, 0.92);
+            backdrop-filter: blur(3px);
+            border-radius: 80px;
+            box-shadow: 0 25px 40px rgba(0, 0, 0, 0.2), 0 0 0 12px #fff9cf inset, 0 0 0 15px #ffcf8a inset;
+            overflow: hidden;
+        }
+
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        /* 左侧玩家区 包含宠物养成 */
+        .players-area {
+            flex: 1.3;
+            min-width: 280px;
+            background: #fef7e0;
+            margin: 20px 0 20px 20px;
+            border-radius: 56px;
+            padding: 20px 16px;
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08);
+            border: 2px solid #ffcf9a;
+        }
+
+        .players-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 3px dashed #ffbc6e;
+            padding-bottom: 10px;
+        }
+
+        .players-header h2 {
+            font-size: 1.7rem;
+            background: linear-gradient(135deg, #588b2e, #2f6b1f);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            display: flex;
+            gap: 10px;
+        }
+
+        .add-player-btn {
+            background: #ffad60;
+            border: none;
+            font-size: 1.3rem;
+            font-weight: bold;
+            padding: 8px 20px;
+            border-radius: 60px;
+            cursor: pointer;
+            font-family: inherit;
+            color: white;
+            box-shadow: 0 5px 0 #9b4a1a;
+            transition: 0.07s linear;
+        }
+
+        .add-player-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #9b4a1a;
+        }
+
+        .players-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            max-height: 550px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        /* 玩家卡片 + 宠物大集合 */
+        .player-card {
+            background: white;
+            border-radius: 48px;
+            padding: 12px 16px;
+            transition: all 0.2s;
+            box-shadow: 0 6px 0 #ffe0b0;
+            border: 1px solid #ffd8a8;
+            cursor: pointer;
+        }
+
+        .player-card.active-player {
+            background: #fff5cf;
+            border: 3px solid #ffa047;
+            box-shadow: 0 0 0 4px #ffd78c;
+        }
+
+        .player-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .player-name-area {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 2;
+        }
+
+        .player-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: #fff0db;
+            display: inline-block;
+            width: fit-content;
+            padding: 2px 16px;
+            border-radius: 40px;
+        }
+
+        .player-score {
+            background: #ffe2bc;
+            border-radius: 30px;
+            padding: 2px 12px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            width: fit-content;
+        }
+
+        /* 宠物小窝 */
+        .pet-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #fef2e2;
+            margin: 12px 0 8px 0;
+            padding: 8px 12px;
+            border-radius: 50px;
+            flex-wrap: wrap;
+        }
+
+        .pet-avatar {
+            font-size: 2.2rem;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+            transition: transform 0.2s ease;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        /* 4D 可爱特效: 旋转+轻微3D */
+        .pet-avatar:hover {
+            transform: rotateY(12deg) scale(1.08);
+        }
+
+        .pet-info {
+            flex: 2;
+        }
+
+        .pet-name-lv {
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: flex;
+            gap: 8px;
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+
+        .pet-level {
+            background: #ffbd7f;
+            border-radius: 30px;
+            padding: 0px 10px;
+            color: white;
+            font-size: 0.8rem;
+        }
+
+        .pet-bar {
+            background: #eeddbb;
+            border-radius: 20px;
+            height: 8px;
+            width: 100%;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .pet-bar-fill {
+            background: #ff9f4a;
+            width: 0%;
+            height: 100%;
+            border-radius: 20px;
+        }
+
+        .pet-cost {
+            font-size: 0.7rem;
+            color: #b1621a;
+        }
+
+        .player-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .icon-btn {
+            background: #ffe1bd;
+            border: none;
+            font-size: 1.1rem;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: 0.05s linear;
+        }
+        .icon-btn.feed-btn {
+            background: #f5bc70;
+            width: auto;
+            border-radius: 40px;
+            padding: 0 14px;
+            font-size: 0.9rem;
+        }
+        .icon-btn.pet-change {
+            background: #cbe6fe;
+        }
+        .icon-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* 右侧游戏区 */
+        .game-area {
+            flex: 2;
+            min-width: 280px;
+            background: #fffcf0;
+            margin: 20px;
+            border-radius: 60px;
+            padding: 20px 24px 30px;
+            text-align: center;
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .current-word-box {
+            background: #ffedd5;
+            border-radius: 58px;
+            padding: 18px 10px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 -4px 0 #e5c28e, 0 10px 15px rgba(0,0,0,0.05);
+        }
+
+        .big-hanzi {
+            font-size: 5.5rem;
+            font-weight: 800;
+            color: #a16521;
+            text-shadow: 6px 6px 0 #ffe0a3;
+            background: white;
+            display: inline-block;
+            padding: 0.1em 0.8em;
+            border-radius: 99px;
+        }
+
+        .options-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 18px;
+            margin: 30px 0 20px;
+        }
+
+        .pinyin-btn {
+            background: #ffcf86;
+            border: none;
+            font-size: 1.8rem;
+            font-family: monospace, 'Comic Neue';
+            font-weight: bold;
+            padding: 12px 28px;
+            min-width: 130px;
+            border-radius: 90px;
+            cursor: pointer;
+            box-shadow: 0 7px 0 #a5521b;
+            transition: 0.05s linear;
+        }
+        .pinyin-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #a5521b;
+        }
+
+        .feedback {
+            background: #efe2cd;
+            border-radius: 60px;
+            padding: 12px;
+            margin-top: 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .current-turn {
+            background: #ffdd99;
+            border-radius: 40px;
+            padding: 8px 20px;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 780px) {
+            .big-hanzi { font-size: 3rem; }
+            .pinyin-btn { font-size: 1.2rem; padding: 8px 18px; min-width: 100px; }
+            .pet-avatar { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="dashboard">
+        <div class="players-area">
+            <div class="players-header">
+                <h2>🐣 拼音宠物乐园 🦄</h2>
+                <button class="add-player-btn" id="addPlayerBtn">+ 新同学</button>
+            </div>
+            <div class="players-list" id="playersListContainer"></div>
+            <div style="margin-top: 12px; text-align: center; font-size: 0.8rem; color: #b57c3a;">
+                ✨ 点卡片选中TA答题 | 🍖 喂宠物提升等级 ✨
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div class="current-turn" id="activePlayerDisplay">🎤 当前玩家：未选择</div>
+            <div class="current-word-box">
+                <div class="big-hanzi" id="currentHanzi">怕</div>
+                <div class="question-hint">🐾 点击正确的拼音音节 🐾</div>
+            </div>
+            <div class="options-area" id="optionsContainer"></div>
+            <div class="feedback" id="feedbackMsg">
+                🧸 选一个同学，答题赚积分，再用积分喂宠物升等级吧！
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- 可爱动物库 (4D萌宠) ----------
+    const PET_TYPES = [
+        { emoji: "🐶", name: "黄金小狗" },
+        { emoji: "🐱", name: "彩虹小猫" },
+        { emoji: "🐭", name: "星星仓鼠" },
+        { emoji: "🐹", name: "毛球豚鼠" },
+        { emoji: "🐰", name: "云朵小兔" },
+        { emoji: "🦊", name: "魔法小狐" },
+        { emoji: "🐻", name: "蜂蜜小熊" },
+        { emoji: "🐼", name: "竹子熊猫" },
+        { emoji: "🐨", name: "桉树考拉" },
+        { emoji: "🦝", name: "干脆面君" }
+    ];
+
+    // ---------- 华文拼音词库 ----------
+    const WORD_BANK = [
+        { word: "怕", pinyin: "pà", distractors: ["bà", "pā", "pá"] },
+        { word: "笔", pinyin: "bǐ", distractors: ["pǐ", "bì", "bī"] },
+        { word: "米", pinyin: "mǐ", distractors: ["ní", "lì", "mí"] },
+        { word: "马", pinyin: "mǎ", distractors: ["mā", "nǎ", "má"] },
+        { word: "大", pinyin: "dà", distractors: ["tà", "dā", "dá"] },
+        { word: "花", pinyin: "huā", distractors: ["guā", "huà", "huá"] },
+        { word: "山", pinyin: "shān", distractors: ["sān", "shàn", "shán"] },
+        { word: "水", pinyin: "shuǐ", distractors: ["suǐ", "shuì", "shuí"] },
+        { word: "火", pinyin: "huǒ", distractors: ["huó", "kuǒ", "hǒu"] },
+        { word: "天", pinyin: "tiān", distractors: ["qiān", "tián", "diān"] },
+        { word: "风", pinyin: "fēng", distractors: ["fēn", "féng", "fěng"] },
+        { word: "雨", pinyin: "yǔ", distractors: ["yú", "wǔ", "yù"] }
+    ];
+
+    // ---------- 全局数据 ----------
+    let players = [];           // { id, name, score, pet { typeIndex, level } }
+    let currentPlayerId = null;
+    let currentQuestion = null;
+    let isLock = false;
+    let nextQuestionTimer = null;
+
+    // 辅助函数
+    function genId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 6); }
+
+    // 获取未使用的动物索引 (分配尽量不同)
+    function getUnusedPetIndex(excludeIds = []) {
+        const usedIndexes = players.filter(p => !excludeIds.includes(p.id)).map(p => p.pet.typeIndex);
+        for (let i = 0; i < PET_TYPES.length; i++) {
+            if (!usedIndexes.includes(i)) return i;
+        }
+        return Math.floor(Math.random() * PET_TYPES.length);
+    }
+
+    // 创建新玩家 (自带初始宠物)
+    function createPlayer(name, petTypeIndex = null) {
+        let typeIdx = petTypeIndex;
+        if (typeIdx === null) {
+            typeIdx = getUnusedPetIndex([...players.map(p => p.id)]);
+        }
+        return {
+            id: genId(),
+            name: name,
+            score: 0,
+            pet: {
+                typeIndex: typeIdx,
+                level: 1       // 等级1-10
+            }
+        };
+    }
+
+    // 获取升级所需分数 (当前等级: 等级*10)
+    function getUpgradeCost(level) {
+        if (level >= 10) return Infinity;
+        return level * 10;
+    }
+
+    // 喂养宠物 (消耗积分提升等级)
+    function feedPet(playerId) {
+        const player = players.find(p => p.id === playerId);
+        if (!player) return false;
+        const currentLevel = player.pet.level;
+        if (currentLevel >= 10) {
+            showFeedback(`✨ ${player.name} 的宠物已经满级10级啦！超级厉害！✨`, "#ffc489");
+            return false;
+        }
+        const cost = getUpgradeCost(currentLevel);
+        if (player.score >= cost) {
+            player.score -= cost;
+            player.pet.level += 1;
+            // 升级动画特效（视觉）
+            showFeedback(`🎉🎉 哇！${player.name} 喂了宠物，${PET_TYPES[player.pet.typeIndex].name} 升到 Lv.${player.pet.level} 🎉🎉`, "#b0e57c");
+            updatePlayersUI();
+            // 额外: 若当前玩家是正在喂的那个，更新顶部显示即可
+            if (currentPlayerId === playerId) updateActiveDisplay();
+            return true;
+        } else {
+            showFeedback(`😢 积分不足！需要 ${cost} 分才能让宠物升级～ 快去答题赚积分吧！`, "#f7bc6a");
+            return false;
+        }
+    }
+
+    // 更换宠物 (随机换一种，且尽量不同)
+    function changePet(playerId) {
+        const player = players.find(p => p.id === playerId);
+        if (!player) return;
+        let newIndex = player.pet.typeIndex;
+        let attempts = 0;
+        while (newIndex === player.pet.typeIndex && attempts < 20) {
+            const used = players.filter(p => p.id !== playerId).map(p => p.pet.typeIndex);
+            const available = PET_TYPES.map((_, idx) => idx).filter(idx => !used.includes(idx));
+            if (available.length > 0) {
+                newIndex = available[Math.floor(Math.random() * available.length)];
+            } else {
+                newIndex = Math.floor(Math.random() * PET_TYPES.length);
+            }
+            attempts++;
+        }
+        player.pet.typeIndex = newIndex;
+        updatePlayersUI();
+        showFeedback(`🐣 ${player.name} 的新伙伴：${PET_TYPES[newIndex].name} ${PET_TYPES[newIndex].emoji} 好可爱！`, "#b3d9ff");
+    }
+
+    // 随机获取题目
+    function getRandomQuestion() {
+        const randomIndex = Math.floor(Math.random() * WORD_BANK.length);
+        const base = WORD_BANK[randomIndex];
+        let opts = [base.pinyin, ...base.distractors.slice(0, 2)];
+        opts = [...new Set(opts)];
+        while(opts.length < 3) opts.push("le");
+        for (let i = opts.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [opts[i], opts[j]] = [opts[j], opts[i]];
+        }
+        return { word: base.word, correctPinyin: base.pinyin, options: opts };
+    }
+
+    function renderQuestion() {
+        if (!currentQuestion) currentQuestion = getRandomQuestion();
+        document.getElementById('currentHanzi').innerText = currentQuestion.word;
+        const optionsDiv = document.getElementById('optionsContainer');
+        optionsDiv.innerHTML = '';
+        currentQuestion.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'pinyin-btn';
+            btn.innerText = opt;
+            btn.addEventListener('click', () => {
+                if (isLock) { showFeedback("🐢 等一下下，题目刷新中～"); return; }
+                if (!currentPlayerId) { showFeedback("🍭 先点左边卡片选一位小英雄吧！"); return; }
+                const player = players.find(p => p.id === currentPlayerId);
+                if (!player) { showFeedback("😢 玩家不见了，重新选一个吧"); return; }
+                if (opt === currentQuestion.correctPinyin) {
+                    isLock = true;
+                    player.score += 10;
+                    showFeedback(`🎉🎉 正确！ ${player.name} +10分！ 可以用积分喂宠物啦～ 🎉🎉`, "#7fbf4c");
+                    updatePlayersUI();
+                    if (nextQuestionTimer) clearTimeout(nextQuestionTimer);
+                    nextQuestionTimer = setTimeout(() => {
+                        loadNextQuestion();
+                        isLock = false;
+                    }, 700);
+                } else {
+                    showFeedback(`❌ 哎呀～ “${currentQuestion.word}” 的正确拼音是 “${currentQuestion.correctPinyin}”，再试一次！`, "#f7a35c");
+                    btn.style.transform = "translateY(3px)";
+                    setTimeout(() => btn.style.transform = "", 150);
+                }
+            });
+            optionsDiv.appendChild(btn);
+        });
+    }
+
+    function loadNextQuestion() {
+        currentQuestion = getRandomQuestion();
+        renderQuestion();
+        isLock = false;
+        if (nextQuestionTimer) clearTimeout(nextQuestionTimer);
+    }
+
+    function showFeedback(msg, bgColor = "#f8d9a8") {
+        const fbDiv = document.getElementById('feedbackMsg');
+        fbDiv.innerHTML = `💬 ${msg}`;
+        fbDiv.style.backgroundColor = bgColor;
+        setTimeout(() => {
+            if (document.getElementById('feedbackMsg')) fbDiv.style.backgroundColor = "#efe2cd";
+        }, 2000);
+    }
+
+    // 更新左侧UI (包含宠物等级进度条)
+    function updatePlayersUI() {
+        const container = document.getElementById('playersListContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        if (players.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'player-card';
+            emptyDiv.innerText = '✨ 点击 + 新同学 加入游戏 ✨';
+            container.appendChild(emptyDiv);
+            document.getElementById('activePlayerDisplay').innerHTML = `🎤 当前玩家：无`;
+            currentPlayerId = null;
+            return;
+        }
+
+        players.forEach(player => {
+            const card = document.createElement('div');
+            card.className = 'player-card';
+            if (currentPlayerId === player.id) card.classList.add('active-player');
+
+            const petData = PET_TYPES[player.pet.typeIndex];
+            const currentLevel = player.pet.level;
+            const maxLevel = 10;
+            const nextCost = currentLevel < maxLevel ? getUpgradeCost(currentLevel) : 0;
+            const progressPercent = ((currentLevel - 1) / (maxLevel - 1)) * 100;
+
+            card.innerHTML = `
+                <div class="player-main">
+                    <div class="player-name-area">
+                        <div class="player-name">🧸 ${escapeHtml(player.name)}</div>
+                        <div class="player-score">🍎 积分: ${player.score}</div>
+                    </div>
+                </div>
+                <div class="pet-area">
+                    <div class="pet-avatar" data-pet-click="${player.id}">${petData.emoji}</div>
+                    <div class="pet-info">
+                        <div class="pet-name-lv">
+                            <span>${petData.name}</span>
+                            <span class="pet-level">Lv.${currentLevel}/${maxLevel}</span>
+                        </div>
+                        <div class="pet-bar">
+                            <div class="pet-bar-fill" style="width: ${progressPercent}%;"></div>
+                        </div>
+                        <div class="pet-cost">🍖 升下级需 ${nextCost === Infinity ? '满级啦' : nextCost+' 积分'}</div>
+                    </div>
+                </div>
+                <div class="player-buttons">
+                    <button class="icon-btn feed-btn" data-action="feed" data-id="${player.id}">🍖 喂养</button>
+                    <button class="icon-btn pet-change" data-action="changePet" data-id="${player.id}">🔄 换宠</button>
+                    <button class="icon-btn edit" data-action="edit" data-id="${player.id}">✏️</button>
+                    <button class="icon-btn plus" data-action="plus" data-id="${player.id}">+5</button>
+                    <button class="icon-btn minus" data-action="minus" data-id="${player.id}">-5</button>
+                    <button class="icon-btn del" data-action="del" data-id="${player.id}">🗑️</button>
+                </div>
+            `;
+            // 点击卡片主体选中玩家
+            card.addEventListener('click', (e) => {
+                if (e.target.classList && (e.target.classList.contains('icon-btn') || e.target.closest('.icon-btn'))) return;
+                if (e.target.classList && e.target.classList.contains('pet-avatar')) return;
+                setCurrentPlayer(player.id);
+                showFeedback(`🎋 现在轮到 ${player.name} 答题啦！`, "#ffd89c");
+            });
+            // 宠物头像单独点击也可以喂食（快捷）
+            const petAvatar = card.querySelector('.pet-avatar');
+            if (petAvatar) {
+                petAvatar.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    feedPet(player.id);
+                });
+            }
+            container.appendChild(card);
+        });
+
+        // 全局事件委托处理按钮
+        document.querySelectorAll('.icon-btn').forEach(btn => {
+            btn.removeEventListener('click', window._btnHandler);
+            const handler = (e) => {
+                e.stopPropagation();
+                const action = btn.getAttribute('data-action');
+                const id = btn.getAttribute('data-id');
+                if (!id) return;
+                const player = players.find(p => p.id === id);
+                if (!player) return;
+
+                if (action === 'plus') {
+                    player.score += 5;
+                    updatePlayersUI();
+                    showFeedback(`✨ ${player.name} 积分 +5 (加油鼓励) ✨`, "#c8e6b5");
+                } else if (action === 'minus') {
+                    if (player.score >= 5) player.score -= 5;
+                    else player.score = 0;
+                    updatePlayersUI();
+                    showFeedback(`⭐ ${player.name} 积分 -5，继续努力~`, "#f0aa5a");
+                } else if (action === 'edit') {
+                    const newName = prompt("✏️ 给同学起个可爱名字吧~", player.name);
+                    if (newName && newName.trim()) {
+                        player.name = newName.trim().substring(0, 12);
+                        updatePlayersUI();
+                        showFeedback(`📝 名字更新为：${player.name}`, "#aad0f0");
+                    }
+                } else if (action === 'del') {
+                    if (players.length === 1) {
+                        showFeedback("⚠️ 至少需要一位小英雄，不能删除最后一人哦！", "#f9a26c");
+                        return;
+                    }
+                    const idx = players.findIndex(p => p.id === id);
+                    if (idx !== -1) {
+                        players.splice(idx, 1);
+                        if (currentPlayerId === id) {
+                            currentPlayerId = players.length ? players[0].id : null;
+                        }
+                        updatePlayersUI();
+                        showFeedback(`👋 ${player.name} 暂时离开了~`, "#ffad86");
+                    }
+                } else if (action === 'feed') {
+                    feedPet(id);
+                } else if (action === 'changePet') {
+                    changePet(id);
+                }
+            };
+            btn.addEventListener('click', handler);
+            window._btnHandler = handler;
+        });
+        updateActiveDisplay();
+    }
+
+    function setCurrentPlayer(playerId) {
+        if (players.some(p => p.id === playerId)) {
+            currentPlayerId = playerId;
+            updatePlayersUI();
+        }
+    }
+
+    function updateActiveDisplay() {
+        const player = players.find(p => p.id === currentPlayerId);
+        if (player) {
+            document.getElementById('activePlayerDisplay').innerHTML = `🎤 当前玩家：${player.name}  🐾 积分:${player.score}`;
+        } else {
+            document.getElementById('activePlayerDisplay').innerHTML = `🎤 当前玩家：未选择 (点左边卡片)`;
+        }
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // 添加新玩家 (自动分配不同宠物)
+    function addNewPlayer() {
+        let newName = prompt("✨ 新同学叫什么名字呀？", "小冒险家");
+        if (!newName) newName = "小萌宠师";
+        newName = newName.trim().substring(0, 12);
+        const newPetIndex = getUnusedPetIndex(players.map(p => p.id));
+        const newPlayer = createPlayer(newName, newPetIndex);
+        players.push(newPlayer);
+        if (!currentPlayerId || players.length === 1) {
+            currentPlayerId = newPlayer.id;
+        }
+        updatePlayersUI();
+        showFeedback(`🥳 欢迎 ${newName} 和 ${PET_TYPES[newPetIndex].name} 加入乐园！`, "#e6c8a0");
+    }
+
+    // 初始化默认四位玩家，不同动物
+    function initDefaultPlayers() {
+        const defaultNames = ["🐼 圆圆熊猫", "🐧 噗噗企鹅", "🦊 绒绒狐狸", "🐨 悠悠考拉"];
+        players = [];
+        for (let i = 0; i < defaultNames.length; i++) {
+            let petIdx = i % PET_TYPES.length;
+            players.push({
+                id: genId(),
+                name: defaultNames[i],
+                score: 0,
+                pet: { typeIndex: petIdx, level: 1 }
+            });
+        }
+        currentPlayerId = players[0].id;
+    }
+
+    function initGame() {
+        if (!players.length) initDefaultPlayers();
+        if (players.length > 0 && (!currentPlayerId || !players.find(p => p.id === currentPlayerId))) {
+            currentPlayerId = players[0].id;
+        }
+        if (!currentQuestion) currentQuestion = getRandomQuestion();
+        renderQuestion();
+        updatePlayersUI();
+        isLock = false;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initDefaultPlayers();
+        initGame();
+        const addBtn = document.getElementById('addPlayerBtn');
+        if (addBtn) addBtn.addEventListener('click', addNewPlayer);
+    });
+
+    window.addEventListener('beforeunload', () => {
+        if (nextQuestionTimer) clearTimeout(nextQuestionTimer);
+    });
+</script>
+</body>
+</html>
